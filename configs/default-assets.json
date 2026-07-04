@@ -1,6 +1,12 @@
 {
   "version": 1,
   "background": "#ffffff",
+  "wordmark": {
+    "font_family": "Archivo Black",
+    "font_weight": 400,
+    "google_fonts": true,
+    "color": "#111827"
+  },
   "html_snippet_filename": "html-snippet.html",
   "manifest": {
     "filename": "manifest.json",
@@ -59,7 +65,15 @@
       "format": "png",
       "background": "solid",
       "tier": "macro",
-      "padding_percent": 15
+      "padding_percent": 15,
+      "wordmark": {
+        "enabled": true,
+        "layout": "stacked",
+        "position": "below",
+        "font_size_percent": 11,
+        "gap_percent": 4,
+        "artwork_area_percent": 68
+      }
     },
     "icon-512": {
       "filename": "icon-512.png",
@@ -69,7 +83,15 @@
       "format": "png",
       "background": "solid",
       "tier": "macro",
-      "padding_percent": 15
+      "padding_percent": 15,
+      "wordmark": {
+        "enabled": true,
+        "layout": "stacked",
+        "position": "below",
+        "font_size_percent": 11,
+        "gap_percent": 4,
+        "artwork_area_percent": 68
+      }
     },
     "og-image": {
       "filename": "og-image.jpg",
@@ -85,7 +107,169 @@
       },
       "quality": 92,
       "min_quality": 60,
-      "max_bytes": 500000
+      "max_bytes": 500000,
+      "wordmark": {
+        "enabled": true,
+        "layout": "inline",
+        "position": "right",
+        "font_size_percent": 11,
+        "gap_percent": 5,
+        "artwork_area_percent": 42
+      }
+    },
+    "twitter-image": {
+      "filename": "twitter-image.jpg",
+      "width": 1200,
+      "height": 628,
+      "aspect_ratio": "300:157",
+      "format": "jpg",
+      "background": "solid",
+      "tier": "social",
+      "safe_zone": {
+        "width": 1080,
+        "height": 560
+      },
+      "quality": 92,
+      "min_quality": 60,
+      "max_bytes": 500000,
+      "wordmark": {
+        "enabled": true,
+        "layout": "inline",
+        "position": "right",
+        "font_size_percent": 11,
+        "gap_percent": 5,
+        "artwork_area_percent": 42
+      }
+    },
+    "linkedin-image": {
+      "filename": "linkedin-image.jpg",
+      "width": 1200,
+      "height": 627,
+      "aspect_ratio": "400:209",
+      "format": "jpg",
+      "background": "solid",
+      "tier": "social",
+      "safe_zone": {
+        "width": 1080,
+        "height": 585
+      },
+      "quality": 92,
+      "min_quality": 60,
+      "max_bytes": 500000,
+      "wordmark": {
+        "enabled": true,
+        "layout": "inline",
+        "position": "right",
+        "font_size_percent": 11,
+        "gap_percent": 5,
+        "artwork_area_percent": 42
+      }
+    },
+    "social-square": {
+      "filename": "social-square.jpg",
+      "width": 1200,
+      "height": 1200,
+      "aspect_ratio": "1:1",
+      "format": "jpg",
+      "background": "solid",
+      "tier": "social",
+      "safe_zone": {
+        "width": 960,
+        "height": 960
+      },
+      "quality": 92,
+      "min_quality": 60,
+      "max_bytes": 500000,
+      "wordmark": {
+        "enabled": true,
+        "layout": "stacked",
+        "position": "below",
+        "font_size_percent": 9,
+        "gap_percent": 4,
+        "artwork_area_percent": 62,
+        "max_width_percent": 80
+      }
+    },
+    "social-portrait": {
+      "filename": "social-portrait.jpg",
+      "width": 1080,
+      "height": 1350,
+      "aspect_ratio": "4:5",
+      "format": "jpg",
+      "background": "solid",
+      "tier": "social",
+      "safe_zone": {
+        "width": 900,
+        "height": 1188
+      },
+      "quality": 92,
+      "min_quality": 60,
+      "max_bytes": 750000,
+      "wordmark": {
+        "enabled": true,
+        "layout": "poster",
+        "position": "below",
+        "font_size_percent": 8,
+        "gap_percent": 4,
+        "artwork_area_percent": 64,
+        "max_width_percent": 83,
+        "wrap": true,
+        "line_height": 0.95
+      }
+    },
+    "pinterest-pin": {
+      "filename": "pinterest-pin.jpg",
+      "width": 1000,
+      "height": 1500,
+      "aspect_ratio": "2:3",
+      "format": "jpg",
+      "background": "solid",
+      "tier": "social",
+      "safe_zone": {
+        "width": 840,
+        "height": 1320
+      },
+      "quality": 92,
+      "min_quality": 60,
+      "max_bytes": 750000,
+      "wordmark": {
+        "enabled": true,
+        "layout": "poster",
+        "position": "above",
+        "font_size_percent": 8,
+        "gap_percent": 5,
+        "artwork_area_percent": 58,
+        "max_width_percent": 84,
+        "wrap": true,
+        "line_height": 0.95
+      }
+    },
+    "story-image": {
+      "filename": "story-image.jpg",
+      "width": 1080,
+      "height": 1920,
+      "aspect_ratio": "9:16",
+      "format": "jpg",
+      "background": "solid",
+      "tier": "social",
+      "safe_zone": {
+        "width": 864,
+        "height": 1536
+      },
+      "quality": 92,
+      "min_quality": 60,
+      "max_bytes": 1000000,
+      "wordmark": {
+        "enabled": true,
+        "layout": "poster",
+        "position": "above",
+        "font_size_percent": 7,
+        "gap_percent": 5,
+        "artwork_area_percent": 58,
+        "max_width_percent": 80,
+        "wrap": true,
+        "line_height": 0.95
+      }
     }
   }
 }

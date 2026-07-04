@@ -15,6 +15,8 @@ DEFAULT_CONFIG_PATH = PACKAGE_ROOT / "configs" / "default-assets.json"
 ImageFormat = Literal["svg", "ico", "png", "jpg", "jpeg"]
 BackgroundMode = Literal["transparent", "solid"]
 SvgTier = Literal["micro", "search", "macro", "social"]
+WordmarkPosition = Literal["above", "below", "left", "right"]
+WordmarkLayout = Literal["inline", "stacked", "poster"]
 
 
 class ConfigError(ValueError):
@@ -38,6 +40,114 @@ class SafeZone:
 
 
 @dataclass(frozen=True)
+class WordmarkStyle:
+    """Global wordmark typography settings."""
+
+    font_family: str = "Archivo Black"
+    font_weight: int = 400
+    google_fonts: bool = True
+    color: str = "#111827"
+
+    @classmethod
+    def from_mapping(cls, values: Mapping[str, Any] | None) -> "WordmarkStyle":
+        if values is None:
+            values = {}
+        if not isinstance(values, Mapping):
+            raise ConfigError("wordmark must be an object when provided")
+
+        font_weight = int(values.get("font_weight", 400))
+        if font_weight <= 0:
+            raise ConfigError("wordmark.font_weight must be positive")
+
+        return cls(
+            font_family=str(values.get("font_family", "Archivo Black")),
+            font_weight=font_weight,
+            google_fonts=bool(values.get("google_fonts", True)),
+            color=str(values.get("color", "#111827")),
+        )
+
+
+@dataclass(frozen=True)
+class OutputWordmark:
+    """Per-output wordmark layout settings."""
+
+    enabled: bool = False
+    layout: WordmarkLayout = "stacked"
+    position: WordmarkPosition = "below"
+    font_size_percent: float = 11
+    gap_percent: float = 4
+    artwork_area_percent: float = 68
+    max_width_percent: float | None = None
+    wrap: bool = False
+    line_height: float = 1
+    letter_spacing_em: float = -0.03
+
+    @classmethod
+    def from_mapping(cls, key: str, value: Any) -> "OutputWordmark":
+        if value in (None, {}):
+            return cls()
+        if not isinstance(value, Mapping):
+            raise ConfigError(f"{key}: wordmark must be an object")
+
+        position = str(value.get("position", "below")).lower()
+        if position not in {"above", "below", "left", "right"}:
+            raise ConfigError(
+                f"{key}: wordmark.position must be above, below, left, or right"
+            )
+
+        layout = str(value.get("layout") or _default_wordmark_layout(position)).lower()
+        if layout not in {"inline", "stacked", "poster"}:
+            raise ConfigError(
+                f"{key}: wordmark.layout must be inline, stacked, or poster"
+            )
+
+        font_size_percent = float(value.get("font_size_percent", 11))
+        gap_percent = float(value.get("gap_percent", 4))
+        artwork_area_percent = float(value.get("artwork_area_percent", 68))
+        max_width_percent_value = value.get("max_width_percent")
+        max_width_percent = (
+            None
+            if max_width_percent_value is None
+            else float(max_width_percent_value)
+        )
+        wrap = bool(value.get("wrap", layout == "poster"))
+        line_height = float(value.get("line_height", 0.95 if layout == "poster" else 1))
+        letter_spacing_em = float(value.get("letter_spacing_em", -0.03))
+
+        if not 0 < font_size_percent < 50:
+            raise ConfigError(f"{key}: wordmark.font_size_percent must be between 0 and 50")
+        if gap_percent < 0 or gap_percent >= 50:
+            raise ConfigError(f"{key}: wordmark.gap_percent must be between 0 and 50")
+        if not 0 < artwork_area_percent <= 100:
+            raise ConfigError(
+                f"{key}: wordmark.artwork_area_percent must be between 0 and 100"
+            )
+        if max_width_percent is not None and not 0 < max_width_percent <= 100:
+            raise ConfigError(
+                f"{key}: wordmark.max_width_percent must be between 0 and 100"
+            )
+        if not 0 < line_height <= 2:
+            raise ConfigError(f"{key}: wordmark.line_height must be between 0 and 2")
+        if not -0.5 <= letter_spacing_em <= 0.5:
+            raise ConfigError(
+                f"{key}: wordmark.letter_spacing_em must be between -0.5 and 0.5"
+            )
+
+        return cls(
+            enabled=bool(value.get("enabled", False)),
+            layout=layout,  # type: ignore[arg-type]
+            position=position,  # type: ignore[arg-type]
+            font_size_percent=font_size_percent,
+            gap_percent=gap_percent,
+            artwork_area_percent=artwork_area_percent,
+            max_width_percent=max_width_percent,
+            wrap=wrap,
+            line_height=line_height,
+            letter_spacing_em=letter_spacing_em,
+        )
+
+
+@dataclass(frozen=True)
 class OutputSpec:
     """One output file's layout and rendering settings."""
 
@@ -55,6 +165,7 @@ class OutputSpec:
     quality: int = 92
     min_quality: int = 60
     max_bytes: int | None = None
+    wordmark: OutputWordmark = OutputWordmark()
 
     @classmethod
     def from_mapping(cls, key: str, values: Mapping[str, Any]) -> "OutputSpec":
@@ -81,6 +192,7 @@ class OutputSpec:
 
         safe_zone = _safe_zone_from_mapping(key, values.get("safe_zone"), width, height)
         ico_sizes = _ico_sizes_from_mapping(key, values.get("ico_sizes", ()))
+        wordmark = OutputWordmark.from_mapping(key, values.get("wordmark"))
 
         quality = int(values.get("quality", 92))
         min_quality = int(values.get("min_quality", 60))
@@ -108,6 +220,7 @@ class OutputSpec:
             quality=quality,
             min_quality=min_quality,
             max_bytes=max_bytes,
+            wordmark=wordmark,
         )
 
 
@@ -121,6 +234,7 @@ class AssetConfig:
     html_snippet_filename: str = "html-snippet.html"
     manifest_filename: str = "manifest.json"
     manifest_icon_keys: tuple[str, ...] = ("icon-192", "icon-512")
+    wordmark: WordmarkStyle = WordmarkStyle()
 
     @classmethod
     def from_mapping(cls, values: Mapping[str, Any]) -> "AssetConfig":
@@ -143,6 +257,7 @@ class AssetConfig:
             version=int(values.get("version", 1)),
             background=str(values.get("background", "#ffffff")),
             outputs=specs,
+            wordmark=WordmarkStyle.from_mapping(values.get("wordmark")),
             html_snippet_filename=str(
                 values.get("html_snippet_filename", "html-snippet.html")
             ),
@@ -205,6 +320,10 @@ def _positive_int(values: Mapping[str, Any], name: str, *, output_key: str) -> i
 def _ratio_string(width: int, height: int) -> str:
     divisor = math.gcd(width, height)
     return f"{width // divisor}:{height // divisor}"
+
+
+def _default_wordmark_layout(position: str) -> WordmarkLayout:
+    return "inline" if position in {"left", "right"} else "stacked"
 
 
 def _parse_ratio(value: str) -> tuple[int, int]:

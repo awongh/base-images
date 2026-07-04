@@ -23,5 +23,5 @@
       ]
     }
   },
-  "postCreateCommand": "if [ -f Pipfile ]; then pipenv install --dev && pipenv run playwright install chromium; else python -m venv .venv && . .venv/bin/activate && python -m pip install --upgrade pip setuptools wheel && if [ -f requirements.txt ]; then python -m pip install -r requirements.txt; fi; fi"
+  "postCreateCommand": "if [ -f Pipfile ]; then pipenv install --dev && pipenv run playwright install --with-deps chromium; else python -m venv .venv && . .venv/bin/activate && python -m pip install --upgrade pip setuptools wheel && if [ -f requirements.txt ]; then python -m pip install -r requirements.txt; fi; fi"
 }

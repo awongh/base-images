@@ -4,6 +4,8 @@ from base_images.config import (
     DEFAULT_ASSET_CONFIG,
     AssetConfig,
     OutputSpec,
+    OutputWordmark,
+    WordmarkStyle,
     load_config,
     resolve_config,
 )
@@ -15,6 +17,8 @@ __all__ = [
     "DEFAULT_ASSET_CONFIG",
     "GeneratedAsset",
     "OutputSpec",
+    "OutputWordmark",
+    "WordmarkStyle",
     "load_config",
     "resolve_config",
 ]

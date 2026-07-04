@@ -44,3 +44,38 @@ def test_generate_small_config_outputs_expected_dimensions(tmp_path) -> None:
 
     with Image.open(icon_path) as image:
         assert image.size == (24, 24)
+
+
+def test_html_snippet_uses_dedicated_twitter_image(tmp_path) -> None:
+    svg = tmp_path / "logo.svg"
+    svg.write_text(SIMPLE_SVG, encoding="utf-8")
+    generator = AssetGenerator(svg, tmp_path / "assets")
+
+    html = generator.html_snippet()
+
+    assert '<meta property="og:image" content="/og-image.jpg" />' in html
+    assert '<meta property="og:image:width" content="1200" />' in html
+    assert '<meta property="og:image:height" content="630" />' in html
+    assert '<meta name="twitter:card" content="summary_large_image" />' in html
+    assert '<meta name="twitter:image" content="/twitter-image.jpg" />' in html
+    assert "<!-- Additional Social Image Exports -->" in html
+    assert "<!-- LinkedIn link preview -->" in html
+    assert '<meta property="og:image" content="/linkedin-image.jpg" />' in html
+    assert '<meta property="og:image:width" content="1200" />' in html
+    assert '<meta property="og:image:height" content="627" />' in html
+    assert "<!-- Square social fallback -->" in html
+    assert '<meta property="og:image" content="/social-square.jpg" />' in html
+    assert '<meta property="og:image:width" content="1200" />' in html
+    assert '<meta property="og:image:height" content="1200" />' in html
+    assert "<!-- Portrait feed export -->" in html
+    assert '<meta property="og:image" content="/social-portrait.jpg" />' in html
+    assert '<meta property="og:image:width" content="1080" />' in html
+    assert '<meta property="og:image:height" content="1350" />' in html
+    assert "<!-- Pinterest pin export -->" in html
+    assert '<meta property="og:image" content="/pinterest-pin.jpg" />' in html
+    assert '<meta property="og:image:width" content="1000" />' in html
+    assert '<meta property="og:image:height" content="1500" />' in html
+    assert "<!-- Story/Reels export -->" in html
+    assert '<meta property="og:image" content="/story-image.jpg" />' in html
+    assert '<meta property="og:image:width" content="1080" />' in html
+    assert '<meta property="og:image:height" content="1920" />' in html

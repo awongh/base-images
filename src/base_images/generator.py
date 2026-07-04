@@ -33,11 +33,13 @@ class AssetGenerator:
         macro_svg: Path | str | None = None,
         social_svg: Path | str | None = None,
         background: str | None = None,
+        wordmark: str | None = None,
         config: AssetConfig | Mapping[str, Any] | Path | str | None = None,
     ) -> None:
         self.base_svg = Path(base_svg)
         self.output_dir = Path(output_dir)
         self.background = background
+        self.wordmark = wordmark
         self.config = resolve_config(config)
         self.svg_paths: dict[SvgTier, Path] = {
             "micro": Path(micro_svg) if micro_svg else self.base_svg,
@@ -85,7 +87,18 @@ class AssetGenerator:
         """Render the HTML template for a spec without taking a screenshot."""
 
         svg_text = self.svg_for_tier(spec.tier).read_text(encoding="utf-8")
-        return render_asset_html(spec, svg_text, self._background_color())
+        return render_asset_html(
+            spec,
+            svg_text,
+            self._background_color(),
+            wordmark_text=self.wordmark,
+            wordmark_style=self.config.wordmark,
+        )
+
+    def render_html_for_key(self, key: str) -> str:
+        """Render the HTML template for a configured output key."""
+
+        return self.render_html(self.config.spec(key))
 
     def _render_raster(self, spec: OutputSpec, svg_text: str, destination: Path) -> None:
         png_path = destination
@@ -125,15 +138,22 @@ class AssetGenerator:
                 "`pipenv install --dev` and browsers with `pipenv run playwright install chromium`."
             ) from exc
 
-        html = render_asset_html(spec, svg_text, self._background_color())
+        html = render_asset_html(
+            spec,
+            svg_text,
+            self._background_color(),
+            wordmark_text=self.wordmark,
+            wordmark_style=self.config.wordmark,
+        )
 
         with sync_playwright() as playwright:
             try:
                 browser = playwright.chromium.launch()
             except PlaywrightError as exc:
                 raise RuntimeError(
-                    "Playwright Chromium is required to render images. Install it with "
-                    "`pipenv run playwright install chromium`."
+                    "Playwright Chromium and its Linux system dependencies are required "
+                    "to render images. Install them with "
+                    "`pipenv run playwright install --with-deps chromium`."
                 ) from exc
 
             try:
@@ -142,6 +162,9 @@ class AssetGenerator:
                     device_scale_factor=1,
                 )
                 page.set_content(html, wait_until="load")
+                page.evaluate(
+                    "() => document.fonts ? document.fonts.ready : Promise.resolve()"
+                )
                 page.screenshot(
                     path=str(destination),
                     omit_background=spec.background == "transparent",
@@ -195,13 +218,16 @@ class AssetGenerator:
 
         spec_by_key = {spec.key: spec for spec in self.config.outputs}
         og = spec_by_key.get("og-image")
+        twitter = spec_by_key.get("twitter-image")
         favicon_svg = spec_by_key.get("favicon-svg")
         favicon_ico = spec_by_key.get("favicon-ico")
         apple = spec_by_key.get("apple-touch-icon")
+        additional_social_images = _additional_social_image_snippet(spec_by_key)
 
         og_filename = og.filename if og else "og-image.jpg"
         og_width = og.width if og else 1200
         og_height = og.height if og else 630
+        twitter_filename = twitter.filename if twitter else og_filename
         favicon_svg_filename = favicon_svg.filename if favicon_svg else "favicon.svg"
         favicon_ico_filename = favicon_ico.filename if favicon_ico else "favicon.ico"
         apple_filename = apple.filename if apple else "apple-touch-icon.png"
@@ -211,6 +237,8 @@ class AssetGenerator:
 <meta property="og:image:width" content="{og_width}" />
 <meta property="og:image:height" content="{og_height}" />
 <meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:image" content="/{twitter_filename}" />
+{additional_social_images}
 
 <!-- Favicons (Modern & Legacy) -->
 <link rel="icon" href="/{favicon_svg_filename}" type="image/svg+xml" />
@@ -223,6 +251,33 @@ class AssetGenerator:
 
     def _background_color(self) -> str:
         return self.background or self.config.background
+
+
+def _additional_social_image_snippet(spec_by_key: Mapping[str, OutputSpec]) -> str:
+    social_image_keys = (
+        ("linkedin-image", "LinkedIn link preview"),
+        ("social-square", "Square social fallback"),
+        ("social-portrait", "Portrait feed export"),
+        ("pinterest-pin", "Pinterest pin export"),
+        ("story-image", "Story/Reels export"),
+    )
+    lines: list[str] = []
+    for key, label in social_image_keys:
+        spec = spec_by_key.get(key)
+        if spec is None:
+            continue
+        lines.extend(
+            [
+                f"<!-- {label} -->",
+                f'<meta property="og:image" content="/{spec.filename}" />',
+                f'<meta property="og:image:width" content="{spec.width}" />',
+                f'<meta property="og:image:height" content="{spec.height}" />',
+            ]
+        )
+
+    if not lines:
+        return ""
+    return "\n<!-- Additional Social Image Exports -->\n" + "\n".join(lines)
 
 
 def _resize_spec(spec: OutputSpec, width: int, height: int) -> OutputSpec:
@@ -240,4 +295,5 @@ def _resize_spec(spec: OutputSpec, width: int, height: int) -> OutputSpec:
         quality=spec.quality,
         min_quality=spec.min_quality,
         max_bytes=spec.max_bytes,
+        wordmark=spec.wordmark,
     )
