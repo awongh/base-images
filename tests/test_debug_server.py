@@ -32,6 +32,8 @@ def test_debug_server_serves_default_output_and_index(tmp_path) -> None:
         base_url = _server_url(server)
         with urlopen(base_url, timeout=5) as response:
             body = response.read().decode("utf-8")
+        with urlopen(f"{base_url}raw/icon-512.html", timeout=5) as response:
+            raw_body = response.read().decode("utf-8")
         with urlopen(f"{base_url}outputs", timeout=5) as response:
             index_body = response.read().decode("utf-8")
     finally:
@@ -39,10 +41,13 @@ def test_debug_server_serves_default_output_and_index(tmp_path) -> None:
         server.server_close()
         thread.join(timeout=5)
 
-    assert 'data-output-key="icon-512"' in body
-    assert "Open an output to inspect the exact HTML" in index_body
-    assert '<a href="/og-image.html">og-image</a>' in index_body
-    assert '<a href="/">icon-512</a>' in index_body
+    assert 'data-debug-output-key="icon-512"' in body
+    assert "orange border marks the image bounds" in body
+    assert "background-image:" in body
+    assert 'data-output-key="icon-512"' in raw_body
+    assert "framed debug view" in index_body
+    assert '<a href="/og-image.html">debug</a>' in index_body
+    assert '<a href="/raw/og-image.html">raw</a>' in index_body
 
 
 def test_debug_server_returns_404_for_unknown_output(tmp_path) -> None:

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import base64
+import re
 import html
 import urllib.parse
 
@@ -19,9 +20,10 @@ def render_asset_html(
 ) -> str:
     """Build the HTML document rendered by the browser screenshot step."""
 
-    background = (
+    base_background = (
         background_color if spec.background == "solid" else "transparent"
     )
+    canvas_background = _canvas_background(spec, base_background)
     svg_data = base64.b64encode(svg_text.encode("utf-8")).decode("ascii")
     wordmark_style = wordmark_style or WordmarkStyle()
     show_wordmark = bool(wordmark_text and spec.wordmark.enabled)
@@ -48,7 +50,7 @@ def render_asset_html(
       height: {spec.height}px;
       margin: 0;
       overflow: hidden;
-      background: {html.escape(background)};
+      background: {html.escape(base_background)};
     }}
 
     body {{
@@ -62,7 +64,7 @@ def render_asset_html(
       display: flex;
       align-items: center;
       justify-content: center;
-      background: {html.escape(background)};
+      background: {html.escape(canvas_background)};
     }}
 
     .asset-artwork {{
@@ -126,6 +128,95 @@ def _artwork_box(spec: OutputSpec, *, include_wordmark: bool = False) -> tuple[i
         width,
         max(1, round(height * artwork_fraction)),
     )
+
+
+def _canvas_background(spec: OutputSpec, background: str) -> str:
+    if spec.background != "solid" or spec.tier not in {"macro", "social"}:
+        return background
+
+    gradient_colors = _derived_gradient_colors(background)
+    if gradient_colors is None:
+        return background
+
+    highlight, lowlight = gradient_colors
+    return (
+        "radial-gradient(circle at 18% 20%, "
+        f"{_rgba(highlight, 0.88)} 0%, "
+        f"{_rgba(highlight, 0.34)} 28%, "
+        f"{_rgba(highlight, 0)} 56%), "
+        "radial-gradient(circle at 82% 78%, "
+        f"{_rgba(lowlight, 0.54)} 0%, "
+        f"{_rgba(lowlight, 0.22)} 32%, "
+        f"{_rgba(lowlight, 0)} 64%), "
+        f"{background}"
+    )
+
+
+def _derived_gradient_colors(
+    background: str,
+) -> tuple[tuple[int, int, int], tuple[int, int, int]] | None:
+    rgb = _parse_hex_color(background)
+    if rgb is None:
+        return None
+
+    luminance = _relative_luminance(rgb)
+    if luminance >= 0.72:
+        return (
+            _mix_rgb(rgb, (0, 0, 0), 0.06),
+            _mix_rgb(rgb, (0, 0, 0), 0.14),
+        )
+    if luminance <= 0.18:
+        return (
+            _mix_rgb(rgb, (255, 255, 255), 0.22),
+            _mix_rgb(rgb, (255, 255, 255), 0.10),
+        )
+
+    return (
+        _mix_rgb(rgb, (255, 255, 255), 0.18),
+        _mix_rgb(rgb, (0, 0, 0), 0.12),
+    )
+
+
+def _parse_hex_color(color: str) -> tuple[int, int, int] | None:
+    match = re.fullmatch(r"#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})", color.strip())
+    if match is None:
+        return None
+
+    value = match.group(1)
+    if len(value) == 3:
+        value = "".join(channel * 2 for channel in value)
+
+    return (
+        int(value[0:2], 16),
+        int(value[2:4], 16),
+        int(value[4:6], 16),
+    )
+
+
+def _relative_luminance(rgb: tuple[int, int, int]) -> float:
+    linear = [_linearized_srgb(channel / 255) for channel in rgb]
+    return (linear[0] * 0.2126) + (linear[1] * 0.7152) + (linear[2] * 0.0722)
+
+
+def _linearized_srgb(value: float) -> float:
+    if value <= 0.04045:
+        return value / 12.92
+    return ((value + 0.055) / 1.055) ** 2.4
+
+
+def _mix_rgb(
+    rgb: tuple[int, int, int],
+    target: tuple[int, int, int],
+    amount: float,
+) -> tuple[int, int, int]:
+    return tuple(
+        round(channel + ((target_channel - channel) * amount))
+        for channel, target_channel in zip(rgb, target)
+    )
+
+
+def _rgba(rgb: tuple[int, int, int], alpha: float) -> str:
+    return f"rgba({rgb[0]}, {rgb[1]}, {rgb[2]}, {alpha:g})"
 
 
 def _canvas_classes(spec: OutputSpec, show_wordmark: bool) -> str:

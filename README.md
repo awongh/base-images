@@ -42,6 +42,27 @@ The default config also exports additional social sizes for platforms whose prev
 | `pinterest-pin.jpg` | `1000 x 1500` | Pinterest standard pins | Poster, wrapped wordmark above mark |
 | `story-image.jpg` | `1080 x 1920` | Story/Reels-style manual sharing | Poster, wrapped wordmark above mark with wider vertical safe zone |
 
+### Platform Metadata Behavior
+Most social and messaging platforms do not have their own image meta tag. They scrape the shared page URL and read the first valid Open Graph image. X/Twitter is the major exception because it supports a dedicated `twitter:image`, and Pinterest can receive a vertical image through explicit Pin/share URLs.
+
+| Platform | Image URL to set | Recommended asset | Notes |
+| --- | --- | --- | --- |
+| Facebook / Messenger | `og:image` | `og-image.jpg` | Uses Open Graph. Keep the universal `1200 x 630` image first. |
+| LinkedIn | `og:image` | `og-image.jpg` by default, or `linkedin-image.jpg` on a LinkedIn-specific share page | No reliable `linkedin:image` tag. LinkedIn reads Open Graph. |
+| iMessage | `og:image` | `og-image.jpg` | Uses Open Graph link metadata. No iMessage-specific image tag. |
+| WhatsApp | `og:image` | `og-image.jpg` | Uses Open Graph. Keep the image absolute HTTPS and ideally under `500 KB`. |
+| Slack | `og:image` | `og-image.jpg` | Uses Open Graph and may also inspect Twitter card tags. No Slack-specific image tag for normal links. |
+| Microsoft Teams | `og:image` | `og-image.jpg` | Uses Open Graph for link unfurls. No Teams-specific image tag. |
+| Discord | `og:image` | `og-image.jpg` | Uses Open Graph for embeds. |
+| Telegram / Signal | `og:image` | `og-image.jpg` | Generally use Open Graph and cache aggressively. |
+| Reddit | `og:image` | `og-image.jpg` or `social-square.jpg` on a Reddit-specific share page | Uses Open Graph/Twitter metadata; exact crop can vary by client. |
+| Bluesky / Mastodon | `og:image` | `og-image.jpg` | Generally use Open Graph/Twitter metadata fallbacks. |
+| X / Twitter | `twitter:image` | `twitter-image.jpg` | Use with `twitter:card=summary_large_image`. This is the real platform-specific override. |
+| Pinterest | `data-pin-media` or share URL `media=` | `pinterest-pin.jpg` | Normal page previews can use Open Graph, but Pin buttons/share links should point directly at the vertical asset. |
+| Instagram / Stories / Reels | No normal link-preview meta URL | `social-portrait.jpg` or `story-image.jpg` | Use these as manual upload/export assets rather than page `<head>` metadata. |
+
+If a platform-specific crop is required for a platform that only reads Open Graph, create a dedicated share route where that asset is the first `og:image`. For example, a LinkedIn-only route can use `linkedin-image.jpg` as its first Open Graph image while the main page keeps `og-image.jpg`.
+
 ---
 
 ## 2. Favicons & App Icons (Optical Sizing)
@@ -99,15 +120,27 @@ When a user uploads their base SVG(s) and selects their background colors, the a
 ```
 
 ### 4. HTML Snippet Generator (Feature Idea)
-The app should output this exact HTML snippet for the user to copy/paste into their `<head>` to properly map the generated files:
+The app should output HTML for users to paste into their `<head>` to properly map the generated files. Production sites should use absolute HTTPS URLs instead of root-relative paths:
 
 ```html
 <!-- Open Graph / Social Previews -->
-<meta property="og:image" content="/og-image.jpg" />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://example.com/page" />
+<meta property="og:title" content="Page title" />
+<meta property="og:description" content="Page description" />
+<meta property="og:image" content="https://example.com/og-image.jpg" />
+<meta property="og:image:secure_url" content="https://example.com/og-image.jpg" />
+<meta property="og:image:type" content="image/jpeg" />
 <meta property="og:image:width" content="1200" />
 <meta property="og:image:height" content="630" />
+<meta property="og:image:alt" content="Preview image description" />
+
+<!-- X / Twitter -->
 <meta name="twitter:card" content="summary_large_image" />
-<meta name="twitter:image" content="/twitter-image.jpg" />
+<meta name="twitter:title" content="Page title" />
+<meta name="twitter:description" content="Page description" />
+<meta name="twitter:image" content="https://example.com/twitter-image.jpg" />
+<meta name="twitter:image:alt" content="Preview image description" />
 
 <!-- Favicons (Modern & Legacy) -->
 <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
@@ -116,6 +149,16 @@ The app should output this exact HTML snippet for the user to copy/paste into th
 <!-- OS Native Icons -->
 <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
 <link rel="manifest" href="/manifest.json" /> <!-- Ensure 192 and 512 are linked inside -->
+```
+
+Pinterest can target the generated vertical Pin image through an explicit share URL or Pin button:
+
+```html
+<a
+  href="https://www.pinterest.com/pin/create/button/?url=https%3A%2F%2Fexample.com%2Fpage&media=https%3A%2F%2Fexample.com%2Fpinterest-pin.jpg&description=Page%20description"
+>
+  Save to Pinterest
+</a>
 ```
 
 ## 5. Generator Usage
@@ -150,7 +193,7 @@ pipenv run python -m base_images \
   --debug-output og-image
 ```
 
-This starts a local server at `http://127.0.0.1:8000/` that serves the same HTML Playwright screenshots for the selected output. Open `/outputs` to switch between configured outputs, or pass another key such as `--debug-output icon-512`. Use `--port 8001` or `--host 0.0.0.0` when you need a different bind address, and add `--open-browser` to ask Python to open the page automatically.
+This starts a local server at `http://127.0.0.1:8000/` with a framed debug view for the selected output. The page uses a dark checkerboard background and an orange border so the image bounds stay visible even when the generated image is white on white. Open `/outputs` to switch between configured outputs, or pass another key such as `--debug-output icon-512`. Use `/raw/og-image.html` when you need the exact HTML Playwright screenshots without the debug frame. Use `--port 8001` or `--host 0.0.0.0` when you need a different bind address, and add `--open-browser` to ask Python to open the page automatically.
 
 Provide optical SVG variants when the base SVG is too detailed for smaller sizes:
 

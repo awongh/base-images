@@ -30,6 +30,56 @@ def test_padding_controls_artwork_box(tmp_path) -> None:
     assert "height: 358px;" in html
 
 
+def test_macro_and_social_outputs_use_derived_circle_gradients(tmp_path) -> None:
+    svg = tmp_path / "logo.svg"
+    svg.write_text("<svg viewBox='0 0 10 10'></svg>", encoding="utf-8")
+    generator = AssetGenerator(svg, tmp_path / "assets")
+    config = resolve_config(None)
+
+    macro_html = generator.render_html(config.spec("icon-512"))
+    social_html = generator.render_html(config.spec("og-image"))
+
+    assert "radial-gradient(circle at 18% 20%" in macro_html
+    assert "radial-gradient(circle at 82% 78%" in macro_html
+    assert "rgba(240, 240, 240, 0.88)" in macro_html
+    assert "rgba(219, 219, 219, 0.54)" in macro_html
+    assert "radial-gradient(circle at 18% 20%" in social_html
+    assert "radial-gradient(circle at 82% 78%" in social_html
+
+
+def test_dark_background_gradient_colors_are_lifted_from_background(tmp_path) -> None:
+    svg = tmp_path / "logo.svg"
+    svg.write_text("<svg viewBox='0 0 10 10'></svg>", encoding="utf-8")
+    generator = AssetGenerator(svg, tmp_path / "assets", background="#111827")
+    spec = resolve_config(None).spec("og-image")
+
+    html = generator.render_html(spec)
+
+    assert "rgba(69, 75, 87, 0.88)" in html
+    assert "rgba(41, 47, 61, 0.54)" in html
+    assert "#111827" in html
+
+
+def test_gradients_skip_transparent_and_non_hex_backgrounds(tmp_path) -> None:
+    svg = tmp_path / "logo.svg"
+    svg.write_text("<svg viewBox='0 0 10 10'></svg>", encoding="utf-8")
+    config = resolve_config(None)
+
+    transparent_html = AssetGenerator(svg, tmp_path / "assets").render_html(
+        config.spec("icon-48")
+    )
+    named_color_html = AssetGenerator(
+        svg,
+        tmp_path / "named-assets",
+        background="white",
+    ).render_html(config.spec("icon-512"))
+
+    assert "radial-gradient" not in transparent_html
+    assert "radial-gradient" not in named_color_html
+    assert "background: transparent;" in transparent_html
+    assert "background: white;" in named_color_html
+
+
 def test_wordmark_renders_for_enabled_macro_and_social_outputs(tmp_path) -> None:
     svg = tmp_path / "logo.svg"
     svg.write_text("<svg viewBox='0 0 10 10'></svg>", encoding="utf-8")
