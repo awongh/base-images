@@ -1,0 +1,91 @@
+{
+  "version": 1,
+  "background": "#ffffff",
+  "html_snippet_filename": "html-snippet.html",
+  "manifest": {
+    "filename": "manifest.json",
+    "icons": ["icon-192", "icon-512"]
+  },
+  "outputs": {
+    "favicon-svg": {
+      "filename": "favicon.svg",
+      "width": 32,
+      "height": 32,
+      "aspect_ratio": "1:1",
+      "format": "svg",
+      "background": "transparent",
+      "tier": "micro",
+      "padding_percent": 0
+    },
+    "favicon-ico": {
+      "filename": "favicon.ico",
+      "width": 32,
+      "height": 32,
+      "aspect_ratio": "1:1",
+      "format": "ico",
+      "background": "transparent",
+      "tier": "micro",
+      "padding_percent": 0,
+      "ico_sizes": [
+        [16, 16],
+        [32, 32]
+      ]
+    },
+    "icon-48": {
+      "filename": "icon-48.png",
+      "width": 48,
+      "height": 48,
+      "aspect_ratio": "1:1",
+      "format": "png",
+      "background": "transparent",
+      "tier": "search",
+      "padding_percent": 0
+    },
+    "icon-192": {
+      "filename": "icon-192.png",
+      "width": 192,
+      "height": 192,
+      "aspect_ratio": "1:1",
+      "format": "png",
+      "background": "transparent",
+      "tier": "search",
+      "padding_percent": 0
+    },
+    "apple-touch-icon": {
+      "filename": "apple-touch-icon.png",
+      "width": 180,
+      "height": 180,
+      "aspect_ratio": "1:1",
+      "format": "png",
+      "background": "solid",
+      "tier": "macro",
+      "padding_percent": 15
+    },
+    "icon-512": {
+      "filename": "icon-512.png",
+      "width": 512,
+      "height": 512,
+      "aspect_ratio": "1:1",
+      "format": "png",
+      "background": "solid",
+      "tier": "macro",
+      "padding_percent": 15
+    },
+    "og-image": {
+      "filename": "og-image.jpg",
+      "width": 1200,
+      "height": 630,
+      "aspect_ratio": "40:21",
+      "format": "jpg",
+      "background": "solid",
+      "tier": "social",
+      "safe_zone": {
+        "width": 1080,
+        "height": 600
+      },
+      "quality": 92,
+      "min_quality": 60,
+      "max_bytes": 500000
+    }
+  }
+}

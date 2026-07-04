@@ -1,0 +1,27 @@
+{
+  "name": "Python App",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": ".."
+  },
+  "remoteUser": "vscode",
+  "containerEnv": {
+    "PIPENV_VENV_IN_PROJECT": "1",
+    "PIPENV_NOSPIN": "1",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "PYTHONUNBUFFERED": "1"
+  },
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "python.defaultInterpreterPath": "${containerWorkspaceFolder}/.venv/bin/python",
+        "python.terminal.activateEnvironment": true
+      },
+      "extensions": [
+        "ms-python.python",
+        "ms-python.vscode-pylance"
+      ]
+    }
+  },
+  "postCreateCommand": "if [ -f Pipfile ]; then pipenv install --dev && pipenv run playwright install chromium; else python -m venv .venv && . .venv/bin/activate && python -m pip install --upgrade pip setuptools wheel && if [ -f requirements.txt ]; then python -m pip install -r requirements.txt; fi; fi"
+}
