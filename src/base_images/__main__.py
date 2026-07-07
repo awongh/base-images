@@ -30,7 +30,7 @@ def main() -> None:
     parser.add_argument(
         "--config",
         type=Path,
-        help="Optional JSON config file merged over configs/default-assets.json.",
+        help="Optional JSON/JSONC config file merged over configs/default-assets.jsonc.",
     )
     parser.add_argument(
         "--serve-render-html",

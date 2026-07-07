@@ -296,4 +296,5 @@ def _resize_spec(spec: OutputSpec, width: int, height: int) -> OutputSpec:
         min_quality=spec.min_quality,
         max_bytes=spec.max_bytes,
         wordmark=spec.wordmark,
+        background_gradient=spec.background_gradient,
     )

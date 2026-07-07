@@ -1,0 +1,461 @@
+{
+  // Schema/config version for future migrations.
+  "version": 1,
+  // Default solid background used by outputs whose "background" mode is "solid".
+  // This can be overridden from the CLI with --background.
+  "background": "#8E8E93",
+  // Global wordmark typography. Individual outputs decide whether the wordmark
+  // appears and how it is positioned.
+  "wordmark": {
+    "font_family": "Fredoka",
+    "font_weight": 400,
+    "google_fonts": true,
+    "color": "#ffffff"
+  },
+  // Tier-level radial background texture defaults. These apply to outputs with
+  // matching "tier" values unless an output overrides "background_gradient".
+  "background_gradients": {
+    // Macro images are app icons and touch icons where subtle texture is safe.
+    "macro": {
+      // Turns the radial texture on for every output in the macro tier. Set an
+      // output's "background_gradient.enabled" to false to disable it locally.
+      "enabled": true,
+      // Overall color contrast multiplier for the derived gradient colors.
+      // 100 keeps the color_mix values as written, 50 halves the background-to-
+      // gradient color distance, and values above 100 increase contrast.
+      "contrast_percent": 120,
+      // The highlight circle is mixed from the background color and placed near
+      // the top-left of the canvas.
+      "highlight": {
+        // Circle center as a percentage of canvas width/height. 18/20 means
+        // "18% from the left, 20% from the top".
+        "x_percent": 18,
+        "y_percent": 20,
+        // Radial color stops. "opacity" controls how strong the derived color
+        // is at that ring, and "position_percent" controls how far from the
+        // circle center that ring appears. The final 0-opacity stop sets the
+        // visible radius of the circle.
+        "stops": [
+          {
+            "opacity": 0.52,
+            "position_percent": 0
+          },
+          {
+            "opacity": 0.42,
+            "position_percent": 20
+          },
+          {
+            "opacity": 0,
+            "position_percent": 38
+          }
+        ]
+      },
+      // The lowlight circle sits opposite the highlight to add depth.
+      "lowlight": {
+        // Same coordinate system as highlight, but placed near the bottom-right
+        // so the two circles create a diagonal light/shadow texture.
+        "x_percent": 82,
+        "y_percent": 78,
+        // Same stop format as highlight. Lower opacity keeps the lowlight from
+        // overpowering the mark or wordmark.
+        "stops": [
+          {
+            "opacity": 0.68,
+            "position_percent": 0
+          },
+          {
+            "opacity": 0.3,
+            "position_percent": 24
+          },
+          {
+            "opacity": 0,
+            "position_percent": 44
+          }
+        ]
+      },
+      // Color mixes are percentages away from the configured background color.
+      // Light backgrounds mix toward black, dark backgrounds mix toward white,
+      // and mid-tone backgrounds use white for the highlight and black for the
+      // lowlight.
+      "color_mix": {
+        // Used when the background has high luminance. Higher values make the
+        // circles darker and more visible on light backgrounds.
+        "light": {
+          "highlight_percent": 30,
+          "lowlight_percent": 50
+        },
+        // Used when the background is very dark. Higher values lift the circles
+        // farther toward white.
+        "dark": {
+          "highlight_percent": 48,
+          "lowlight_percent": 30
+        },
+        // Used for middle-luminance backgrounds. The highlight moves toward
+        // white, while the lowlight moves toward black.
+        "mid": {
+          "highlight_percent": 36,
+          "lowlight_percent": 30
+        }
+      }
+    },
+    // Social exports use the same texture schema as macro images. These values
+    // are duplicated so social cards can be tuned independently later.
+    "social": {
+      // Enables the texture for every output in the social tier.
+      "enabled": true,
+      // Overall color contrast multiplier; see macro.contrast_percent for
+      // details.
+      "contrast_percent": 120,
+      // Top-left highlight circle; see macro.highlight for field details.
+      "highlight": {
+        "x_percent": 18,
+        "y_percent": 20,
+        "stops": [
+          {
+            "opacity": 0.92,
+            "position_percent": 0
+          },
+          {
+            "opacity": 0.42,
+            "position_percent": 20
+          },
+          {
+            "opacity": 0,
+            "position_percent": 38
+          }
+        ]
+      },
+      // Bottom-right lowlight circle; see macro.lowlight for field details.
+      "lowlight": {
+        "x_percent": 82,
+        "y_percent": 78,
+        "stops": [
+          {
+            "opacity": 0.68,
+            "position_percent": 0
+          },
+          {
+            "opacity": 0.3,
+            "position_percent": 24
+          },
+          {
+            "opacity": 0,
+            "position_percent": 44
+          }
+        ]
+      },
+      // Background-derived color contrast; see macro.color_mix for field
+      // details.
+      "color_mix": {
+        "light": {
+          "highlight_color": "#FB7185",
+          "lowlight_color": "#0F766E",
+          "highlight_percent": 40,
+          "lowlight_percent": 60
+        },
+        "dark": {
+          "highlight_color": "#FB7185",
+          "lowlight_color": "#0F766E",
+          "highlight_percent": 58,
+          "lowlight_percent": 40
+        },
+        "mid": {
+          "highlight_color": "#FB7185",
+          "lowlight_color": "#0F766E",
+          "highlight_percent": 46,
+          "lowlight_percent": 40
+        }
+      }
+    }
+  },
+  // HTML metadata snippet and web app manifest output locations.
+  "html_snippet_filename": "html-snippet.html",
+  "manifest": {
+    "filename": "manifest.json",
+    "icons": [
+      "icon-192",
+      "icon-512"
+    ]
+  },
+  // Every generated asset. The "tier" chooses which SVG input is used:
+  // micro, search, macro, or social.
+  "outputs": {
+    // Modern SVG favicon. This stays transparent and uses the micro SVG tier.
+    "favicon-svg": {
+      "filename": "favicon.svg",
+      "width": 32,
+      "height": 32,
+      "aspect_ratio": "1:1",
+      "format": "svg",
+      "background": "transparent",
+      "tier": "micro",
+      "padding_percent": 0
+    },
+    // Legacy ICO favicon container with 16px and 32px raster entries.
+    "favicon-ico": {
+      "filename": "favicon.ico",
+      "width": 32,
+      "height": 32,
+      "aspect_ratio": "1:1",
+      "format": "ico",
+      "background": "transparent",
+      "tier": "micro",
+      "padding_percent": 0,
+      "ico_sizes": [
+        [
+          16,
+          16
+        ],
+        [
+          32,
+          32
+        ]
+      ]
+    },
+    // Small transparent icon for search and UI surfaces.
+    "icon-48": {
+      "filename": "icon-48.png",
+      "width": 48,
+      "height": 48,
+      "aspect_ratio": "1:1",
+      "format": "png",
+      "background": "transparent",
+      "tier": "search",
+      "padding_percent": 0
+    },
+    // Larger transparent icon used by search engines and app manifests.
+    "icon-192": {
+      "filename": "icon-192.png",
+      "width": 192,
+      "height": 192,
+      "aspect_ratio": "1:1",
+      "format": "png",
+      "background": "transparent",
+      "tier": "search",
+      "padding_percent": 0
+    },
+    // iOS touch icon. Solid background and padding account for OS masking.
+    "apple-touch-icon": {
+      "filename": "apple-touch-icon.png",
+      "width": 180,
+      "height": 180,
+      "aspect_ratio": "1:1",
+      "format": "png",
+      "background": "solid",
+      "tier": "macro",
+      "padding_percent": 15,
+      "wordmark": {
+        "enabled": false,
+        "layout": "stacked",
+        "position": "below",
+        "font_size_percent": 13,
+        "gap_percent": 8,
+        "artwork_area_percent": 68
+      }
+    },
+    // High-resolution app icon for web app manifests and store-like surfaces.
+    "icon-512": {
+      "filename": "icon-512.png",
+      "width": 512,
+      "height": 512,
+      "aspect_ratio": "1:1",
+      "format": "png",
+      "background": "solid",
+      "tier": "macro",
+      "padding_percent": 15,
+      "wordmark": {
+        "enabled": false,
+        "layout": "stacked",
+        "position": "below",
+        "font_size_percent": 11,
+        "gap_percent": 4,
+        "artwork_area_percent": 58
+      }
+    },
+    // Universal Open Graph card used by most link-preview consumers.
+    "og-image": {
+      "filename": "og-image.jpg",
+      "width": 1200,
+      "height": 630,
+      "aspect_ratio": "40:21",
+      "format": "jpg",
+      "background": "solid",
+      "tier": "social",
+      "safe_zone": {
+        "width": 1080,
+        "height": 600
+      },
+      "quality": 92,
+      "min_quality": 60,
+      "max_bytes": 500000,
+      "wordmark": {
+        "enabled": true,
+        "layout": "inline",
+        "position": "right",
+        "gap_percent": 10,
+        "font_size_percent": 21,
+        "artwork_area_percent": 29
+      }
+    },
+    // X/Twitter large-card ratio with a slightly tighter vertical safe zone.
+    "twitter-image": {
+      "filename": "twitter-image.jpg",
+      "width": 1200,
+      "height": 628,
+      "aspect_ratio": "300:157",
+      "format": "jpg",
+      "background": "solid",
+      "tier": "social",
+      "safe_zone": {
+        "width": 1080,
+        "height": 560
+      },
+      "quality": 92,
+      "min_quality": 60,
+      "max_bytes": 500000,
+      "wordmark": {
+        "enabled": true,
+        "layout": "inline",
+        "position": "right",
+        "font_size_percent": 11,
+        "gap_percent": 5,
+        "artwork_area_percent": 34
+      }
+    },
+    // LinkedIn's exact link-share image ratio.
+    "linkedin-image": {
+      "filename": "linkedin-image.jpg",
+      "width": 1200,
+      "height": 627,
+      "aspect_ratio": "400:209",
+      "format": "jpg",
+      "background": "solid",
+      "tier": "social",
+      "safe_zone": {
+        "width": 1080,
+        "height": 585
+      },
+      "quality": 92,
+      "min_quality": 60,
+      "max_bytes": 500000,
+      "wordmark": {
+        "enabled": true,
+        "layout": "inline",
+        "position": "right",
+        "font_size_percent": 11,
+        "gap_percent": 5,
+        "artwork_area_percent": 34
+      }
+    },
+    // Square fallback/export for thumbnails and social feeds.
+    "social-square": {
+      "filename": "social-square.jpg",
+      "width": 1200,
+      "height": 1200,
+      "aspect_ratio": "1:1",
+      "format": "jpg",
+      "background": "solid",
+      "tier": "social",
+      "safe_zone": {
+        "width": 960,
+        "height": 960
+      },
+      "quality": 92,
+      "min_quality": 60,
+      "max_bytes": 500000,
+      "wordmark": {
+        "enabled": true,
+        "layout": "stacked",
+        "position": "below",
+        "font_size_percent": 9,
+        "gap_percent": 4,
+        "artwork_area_percent": 54,
+        "max_width_percent": 80
+      }
+    },
+    // Portrait feed export for LinkedIn and Instagram-style layouts.
+    "social-portrait": {
+      "filename": "social-portrait.jpg",
+      "width": 1080,
+      "height": 1350,
+      "aspect_ratio": "4:5",
+      "format": "jpg",
+      "background": "solid",
+      "tier": "social",
+      "safe_zone": {
+        "width": 900,
+        "height": 1188
+      },
+      "quality": 92,
+      "min_quality": 60,
+      "max_bytes": 750000,
+      "wordmark": {
+        "enabled": true,
+        "layout": "poster",
+        "position": "below",
+        "font_size_percent": 8,
+        "gap_percent": 4,
+        "artwork_area_percent": 56,
+        "max_width_percent": 83,
+        "wrap": true,
+        "line_height": 0.95
+      }
+    },
+    // Pinterest standard pin export.
+    "pinterest-pin": {
+      "filename": "pinterest-pin.jpg",
+      "width": 1000,
+      "height": 1500,
+      "aspect_ratio": "2:3",
+      "format": "jpg",
+      "background": "solid",
+      "tier": "social",
+      "safe_zone": {
+        "width": 840,
+        "height": 1320
+      },
+      "quality": 92,
+      "min_quality": 60,
+      "max_bytes": 750000,
+      "wordmark": {
+        "enabled": true,
+        "layout": "poster",
+        "position": "above",
+        "font_size_percent": 8,
+        "gap_percent": 5,
+        "artwork_area_percent": 50,
+        "max_width_percent": 84,
+        "wrap": true,
+        "line_height": 0.95
+      }
+    },
+    // Tall story/reels export for manual sharing.
+    "story-image": {
+      "filename": "story-image.jpg",
+      "width": 1080,
+      "height": 1920,
+      "aspect_ratio": "9:16",
+      "format": "jpg",
+      "background": "solid",
+      "tier": "social",
+      "safe_zone": {
+        "width": 864,
+        "height": 1536
+      },
+      "quality": 92,
+      "min_quality": 60,
+      "max_bytes": 1000000,
+      "wordmark": {
+        "enabled": true,
+        "layout": "poster",
+        "position": "above",
+        "font_size_percent": 7,
+        "gap_percent": 5,
+        "artwork_area_percent": 50,
+        "max_width_percent": 80,
+        "wrap": true,
+        "line_height": 0.95
+      }
+    }
+  }
+}

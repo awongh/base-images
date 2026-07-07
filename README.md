@@ -233,12 +233,12 @@ generator.generate()
 
 ### Configuration
 
-The default layout lives in `configs/default-assets.json` and is also exported as `DEFAULT_ASSET_CONFIG`. If no config is supplied, `AssetGenerator` uses that default config.
+The default layout lives in `configs/default-assets.jsonc` and is also exported as `DEFAULT_ASSET_CONFIG`. If no config is supplied, `AssetGenerator` uses that default config.
 
-Pass a JSON config file to override only the values that differ from the defaults:
+Pass a JSON or JSONC config file to override only the values that differ from the defaults:
 
 ```bash
-pipenv run python -m base_images --base logo.svg --output assets --config asset-config.json
+pipenv run python -m base_images --base logo.svg --output assets --config asset-config.jsonc
 ```
 
 Example override:

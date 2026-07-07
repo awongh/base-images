@@ -3,11 +3,16 @@
 from __future__ import annotations
 
 import base64
-import re
 import html
+import re
 import urllib.parse
 
-from base_images.config import OutputSpec, WordmarkStyle
+from base_images.config import (
+    GradientCircle,
+    GradientColorMix,
+    OutputSpec,
+    WordmarkStyle,
+)
 
 
 def render_asset_html(
@@ -27,7 +32,8 @@ def render_asset_html(
     svg_data = base64.b64encode(svg_text.encode("utf-8")).decode("ascii")
     wordmark_style = wordmark_style or WordmarkStyle()
     show_wordmark = bool(wordmark_text and spec.wordmark.enabled)
-    image_width, image_height = _artwork_box(spec, include_wordmark=show_wordmark)
+    image_width, image_height = _artwork_box(
+        spec, include_wordmark=show_wordmark)
     canvas_classes = _canvas_classes(spec, show_wordmark)
     font_link = _google_font_link(wordmark_style) if show_wordmark else ""
     wordmark_css = _wordmark_css(spec, wordmark_style, show_wordmark)
@@ -70,15 +76,17 @@ def render_asset_html(
     .asset-artwork {{
       width: {image_width}px;
       height: {image_height}px;
-      display: grid;
-      place-items: center;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
     }}
 
     .asset-artwork img {{
       display: block;
       max-width: 100%;
       max-height: 100%;
-      width: 100%;
+      width: auto;
       height: 100%;
       object-fit: contain;
     }}
@@ -131,49 +139,67 @@ def _artwork_box(spec: OutputSpec, *, include_wordmark: bool = False) -> tuple[i
 
 
 def _canvas_background(spec: OutputSpec, background: str) -> str:
-    if spec.background != "solid" or spec.tier not in {"macro", "social"}:
+    if spec.background != "solid" or not spec.background_gradient.enabled:
         return background
 
-    gradient_colors = _derived_gradient_colors(background)
+    gradient_colors = _derived_gradient_colors(background, spec)
     if gradient_colors is None:
         return background
 
     highlight, lowlight = gradient_colors
     return (
-        "radial-gradient(circle at 18% 20%, "
-        f"{_rgba(highlight, 0.88)} 0%, "
-        f"{_rgba(highlight, 0.34)} 28%, "
-        f"{_rgba(highlight, 0)} 56%), "
-        "radial-gradient(circle at 82% 78%, "
-        f"{_rgba(lowlight, 0.54)} 0%, "
-        f"{_rgba(lowlight, 0.22)} 32%, "
-        f"{_rgba(lowlight, 0)} 64%), "
+        f"{_radial_gradient(spec.background_gradient.highlight, highlight)}, "
+        f"{_radial_gradient(spec.background_gradient.lowlight, lowlight)}, "
         f"{background}"
     )
 
 
 def _derived_gradient_colors(
     background: str,
+    spec: OutputSpec,
 ) -> tuple[tuple[int, int, int], tuple[int, int, int]] | None:
     rgb = _parse_hex_color(background)
     if rgb is None:
         return None
 
+    # The two returned colors become the top-left highlight and bottom-right
+    # lowlight circles. Luminance lets us pick nearby colors with enough
+    # contrast to show texture without drifting away from the chosen background.
     luminance = _relative_luminance(rgb)
     if luminance >= 0.72:
-        return (
-            _mix_rgb(rgb, (0, 0, 0), 0.06),
-            _mix_rgb(rgb, (0, 0, 0), 0.14),
+        # Very light backgrounds need darker derived stops; adding white would
+        # disappear against the base color.
+        return _mix_gradient_colors(
+            rgb,
+            (0, 0, 0),
+            spec.background_gradient.contrast_percent,
+            spec.background_gradient.light_mix,
         )
     if luminance <= 0.18:
-        return (
-            _mix_rgb(rgb, (255, 255, 255), 0.22),
-            _mix_rgb(rgb, (255, 255, 255), 0.10),
+        # Very dark backgrounds need lifted stops, with the highlight mixed
+        # further toward white than the lowlight.
+        return _mix_gradient_colors(
+            rgb,
+            (255, 255, 255),
+            spec.background_gradient.contrast_percent,
+            spec.background_gradient.dark_mix,
         )
 
+    # Mid-tone backgrounds can support both directions: a lighter circle for
+    # the highlight and a darker circle for depth.
     return (
-        _mix_rgb(rgb, (255, 255, 255), 0.18),
-        _mix_rgb(rgb, (0, 0, 0), 0.12),
+        _mix_rgb(
+            rgb,
+            (255, 255, 255),
+            (spec.background_gradient.mid_mix.highlight_percent / 100)
+            * (spec.background_gradient.contrast_percent / 100),
+        ),
+        _mix_rgb(
+            rgb,
+            (0, 0, 0),
+            (spec.background_gradient.mid_mix.lowlight_percent / 100)
+            * (spec.background_gradient.contrast_percent / 100),
+        ),
     )
 
 
@@ -212,6 +238,30 @@ def _mix_rgb(
     return tuple(
         round(channel + ((target_channel - channel) * amount))
         for channel, target_channel in zip(rgb, target)
+    )
+
+
+def _mix_gradient_colors(
+    rgb: tuple[int, int, int],
+    target: tuple[int, int, int],
+    contrast_percent: float,
+    mix: GradientColorMix,
+) -> tuple[tuple[int, int, int], tuple[int, int, int]]:
+    contrast = contrast_percent / 100
+    return (
+        _mix_rgb(rgb, target, (mix.highlight_percent / 100) * contrast),
+        _mix_rgb(rgb, target, (mix.lowlight_percent / 100) * contrast),
+    )
+
+
+def _radial_gradient(circle: GradientCircle, rgb: tuple[int, int, int]) -> str:
+    stops = ", ".join(
+        f"{_rgba(rgb, stop.opacity)} {stop.position_percent:g}%"
+        for stop in circle.stops
+    )
+    return (
+        f"radial-gradient(circle at {circle.x_percent:g}% {circle.y_percent:g}%, "
+        f"{stops})"
     )
 
 
@@ -254,7 +304,8 @@ def _wordmark_css(
     if not show_wordmark:
         return ""
 
-    font_size = max(1, round(spec.height * (spec.wordmark.font_size_percent / 100)))
+    font_size = max(
+        1, round(spec.height * (spec.wordmark.font_size_percent / 100)))
     gap = max(0, round(spec.width * (spec.wordmark.gap_percent / 100)))
     flex_direction = _flex_direction(spec)
     default_max_width_percent = (

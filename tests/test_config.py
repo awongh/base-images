@@ -1,20 +1,21 @@
-import json
-
 import pytest
 
-from base_images import DEFAULT_ASSET_CONFIG, AssetGenerator, resolve_config
+from base_images import DEFAULT_ASSET_CONFIG, AssetGenerator, load_config, resolve_config
 from base_images.config import ConfigError, DEFAULT_CONFIG_PATH
 
 
 def test_default_config_file_matches_exported_dict() -> None:
-    with DEFAULT_CONFIG_PATH.open(encoding="utf-8") as config_file:
-        file_config = json.load(config_file)
+    file_config = load_config(DEFAULT_CONFIG_PATH)
 
     assert file_config == DEFAULT_ASSET_CONFIG
+    assert DEFAULT_CONFIG_PATH.suffix == ".jsonc"
 
 
 def test_default_specs_match_readme_layouts() -> None:
     config = resolve_config(None)
+
+    assert config.background == "#8E8E93"
+    assert config.wordmark.color == "#ffffff"
 
     og = config.spec("og-image")
     assert (og.width, og.height) == (1200, 630)
@@ -49,7 +50,20 @@ def test_default_specs_match_readme_layouts() -> None:
     assert config.spec("icon-192").background == "transparent"
     assert config.spec("apple-touch-icon").padding_percent == 15
     assert config.spec("icon-512").padding_percent == 15
-    assert config.wordmark.font_family == "Archivo Black"
+    assert config.spec("icon-48").background_gradient.enabled is False
+    assert config.spec("apple-touch-icon").background_gradient.enabled is True
+    assert config.spec("icon-512").background_gradient.enabled is True
+    assert config.spec("og-image").background_gradient.enabled is True
+    assert config.spec("og-image").background_gradient.contrast_percent == 100
+    assert config.spec("og-image").background_gradient.highlight.x_percent == 18
+    assert config.spec("og-image").background_gradient.highlight.y_percent == 20
+    assert (
+        config.spec("og-image").background_gradient.highlight.stops[-1].position_percent
+        == 38
+    )
+    assert config.spec("og-image").background_gradient.light_mix.highlight_percent == 30
+    assert config.spec("og-image").background_gradient.light_mix.lowlight_percent == 50
+    assert config.wordmark.font_family == "Fredoka"
     assert config.wordmark.font_weight == 400
     assert config.wordmark.google_fonts is True
     assert config.spec("favicon-svg").wordmark.enabled is False
@@ -70,6 +84,19 @@ def test_config_overrides_merge_over_defaults() -> None:
                 "font_weight": 700,
                 "google_fonts": False,
                 "color": "#ff00ff",
+            },
+            "background_gradients": {
+                "social": {
+                    "contrast_percent": 50,
+                    "highlight": {
+                        "x_percent": 24,
+                    },
+                    "color_mix": {
+                        "light": {
+                            "highlight_percent": 40,
+                        }
+                    },
+                }
             },
             "outputs": {
                 "og-image": {
@@ -116,15 +143,48 @@ def test_config_overrides_merge_over_defaults() -> None:
     assert og.wordmark.wrap is True
     assert og.wordmark.line_height == 0.9
     assert og.wordmark.letter_spacing_em == -0.01
+    assert og.background_gradient.enabled is True
+    assert og.background_gradient.contrast_percent == 50
+    assert og.background_gradient.highlight.x_percent == 24
+    assert og.background_gradient.highlight.y_percent == 20
+    assert og.background_gradient.light_mix.highlight_percent == 40
+    assert og.background_gradient.light_mix.lowlight_percent == 50
 
     icon = config.spec("icon-512")
     assert icon.filename == "app-icon.png"
     assert (icon.width, icon.height) == (256, 256)
     assert icon.padding_percent == 20
+    assert icon.background_gradient.enabled is True
+    assert icon.background_gradient.highlight.x_percent == 18
     assert config.wordmark.font_family == "Inter"
     assert config.wordmark.font_weight == 700
     assert config.wordmark.google_fonts is False
     assert config.wordmark.color == "#ff00ff"
+
+
+def test_load_config_accepts_jsonc_comments(tmp_path) -> None:
+    config_path = tmp_path / "asset-config.jsonc"
+    config_path.write_text(
+        """
+        {
+          // Line comments are allowed.
+          "outputs": {
+            "og-image": {
+              "filename": "commented.png", /* Inline block comments too. */
+              "width": 1200,
+              "height": 630,
+              "aspect_ratio": "40:21",
+              "format": "png"
+            }
+          }
+        }
+        """,
+        encoding="utf-8",
+    )
+
+    config = resolve_config(config_path)
+
+    assert config.spec("og-image").filename == "commented.png"
 
 
 def test_invalid_ratio_raises_clear_error() -> None:
